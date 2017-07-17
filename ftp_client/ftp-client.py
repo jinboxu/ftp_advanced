@@ -1,6 +1,7 @@
 import socket,json
 import hashlib
-import os
+import os, sys,time
+import threading
 
 client = socket.socket()
 client.connect(('localhost', 6666))
@@ -107,6 +108,13 @@ class Ftp_client(object):
     def pwd(self):
         print(self.cur_path)
 
+    @staticmethod
+    def view_bar(rate_num):
+        r = '\r[%s%s]%d%%' % ("=" * rate_num, " " * (100 - rate_num), rate_num)  # \r 代表回车，也就是打印头归位，回到某一行的开头
+        sys.stdout.write(r)
+        sys.stdout.flush()
+
+
     def get(self):
         client.send( json.dumps(self.cmd_list).encode() )
         result = client.recv(1024).decode()
@@ -120,6 +128,9 @@ class Ftp_client(object):
                 received_size = 0
                 f = open(file_name, 'wb')
                 m = hashlib.md5()
+
+                # t =threading.Thread(target= Ftp_client.view_bar, args= (received_size, file_total_size,))
+                # t.start()
                 while received_size < file_total_size:
                     if file_total_size - received_size > 1024:
                         size = 1024
@@ -129,13 +140,17 @@ class Ftp_client(object):
                     received_size += len(data)
                     f.write(data)
                     m.update(data)
-                    print(file_total_size, received_size)
+                    rate_num = int(received_size/file_total_size*100)
+                    Ftp_client.view_bar(rate_num)
+
                 else:
+                    # t.join()
                     file_md5 = m.hexdigest()
-                    print("file recv done")
+                    print("\nfile recv done")
                     f.close()
                 server_file_md5 = client.recv(1024).decode()
                 client.send(b'get the md5')
+
                 if file_md5 == server_file_md5:
                     print("文件%s MD5  一致" %file_name)
                 else:
@@ -144,6 +159,7 @@ class Ftp_client(object):
             client.recv(1024)
         else:
             print("file %s is not exists" %result)
+
 
     def put(self):
         file_list = self.cmd_list[1:]
@@ -161,13 +177,19 @@ class Ftp_client(object):
 
             f = open(file_name, 'rb')
             m = hashlib.md5()
+            put_size = 0
             for line in f:
                 client.send(line)
                 m.update(line)
+                put_size += len(line)
+
+                rate = put_size/file_size
+                rate_num = int(rate*100)
+                Ftp_client.view_bar(rate_num)
             f.close()
             file_md5 = m.hexdigest()
             server_file_md5 = client.recv(1024).decode()
-            print("file %s put over" %file_name)
+            print("\nfile %s put over" %file_name)
             if file_md5 == server_file_md5:
                 print("文件%s MD5  一致" %file_name)
             else:
