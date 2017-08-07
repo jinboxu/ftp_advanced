@@ -20,7 +20,7 @@ class Ftp_client(object):
             cmd = input('[%s@jinbo %s]$' %(username, view_path)).strip()
             if not cmd:continue
             self.cmd_list = cmd.split()
-            print(self.cmd_list)
+            # print(self.cmd_list)
             if hasattr(self, self.cmd_list[0]):
                 getattr(self, self.cmd_list[0])()
             else:
@@ -47,7 +47,7 @@ class Ftp_client(object):
         if self.cmd_list == ["ls"]:
             client.send(json.dumps(self.cmd_list).encode())
             server_reponse = client.recv(1024).decode()
-            print(server_reponse)
+            # print(server_reponse)
             cmd_res_size = int(server_reponse)
             client.send(b"ready to recv cmd res")
 
@@ -57,7 +57,7 @@ class Ftp_client(object):
                 data = client.recv(1024)
                 received_data += data
                 received_size += len(data)
-                print(cmd_res_size, received_size)
+                # print(cmd_res_size, received_size)
             else:
                 print(received_data.decode())
         else:
@@ -65,17 +65,18 @@ class Ftp_client(object):
 
 
     def cd(self):   #注意'\' ,最好使用os.sep取代‘\\’，毕竟跨平台
+        home_path_len = len(self.home_path.split('\\'))
         if len(self.cmd_list) != 2:
             print("cmd error")
             return
         if self.cmd_list == ['cd', '..']:
             cur_path = os.path.dirname(self.cur_path)
-            if len(cur_path.split('\\')) >= 6:
+            if len(cur_path.split('\\')) >= home_path_len:
                 self.cur_path = cur_path
                 client.send(json.dumps(self.cmd_list).encode())
-                print('11')
+                # print('11')
                 client.recv(1024)
-                print('22')
+                # print('22')
             else:
                 print("你只能在自己的家目录下活动")
         elif self.cmd_list == ['cd', '\\']:
@@ -84,17 +85,17 @@ class Ftp_client(object):
             client.recv(1024)
         else:
             change_dir = self.cmd_list[1]
-            print(change_dir)
+            # print(change_dir)
             if change_dir.startswith('.'):
                 cur_path = os.path.join(self.cur_path, change_dir[2::])
             else:
                 cur_path = self.cmd_list[1]
-            print('cur_path', cur_path)
-            print('home_path', self.home_path)
-            if len(cur_path.split('\\')) >= 6 and cur_path.split('\\')[:6] == self.home_path.split('\\'):
-                print('okok')
+            # print('cur_path', cur_path)
+            # print('home_path', self.home_path)
+            if len(cur_path.split('\\')) >= home_path_len and cur_path.split('\\')[:home_path_len] == self.home_path.split('\\'):
+                # print('okok')
                 self.cmd_list = ['cd', cur_path]
-                print(self.cmd_list)
+                # print(self.cmd_list)
                 client.send(json.dumps(self.cmd_list).encode())
                 result = client.recv(1024).decode()
                 if result == 'True':

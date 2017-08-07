@@ -14,15 +14,15 @@ class MyHandle( socketserver.BaseRequestHandler ):
         self.request.recv(1024)
         self.cur_path = os.getcwd()
         self.request.send(self.cur_path.encode())   #将当前工作路径发给客户端
-
-        try:
-            cmd = self.request.recv(1024).decode()
-            self.cmd_list = json.loads(cmd)
-            print(self.cmd_list)
-            getattr(self, self.cmd_list[0])()
-        except ConnectionResetError:
-            print('客户端已断开')
-            self.request.close()
+        while True:
+            try:
+                cmd = self.request.recv(1024).decode()
+                self.cmd_list = json.loads(cmd)
+                print(self.cmd_list)
+                getattr(self, self.cmd_list[0])()
+            except ConnectionResetError:
+                print('客户端已断开')
+                self.request.close()
 
 
         # while True:
