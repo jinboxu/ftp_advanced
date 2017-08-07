@@ -118,10 +118,11 @@ class MyHandle( socketserver.BaseRequestHandler ):
         self.request.send(b'ready to get files')
         file_list = self.cmd_list[1:]
         for file_name in file_list:
+            file_path = os.path.join(self.cur_path, file_name)
             file_size = int(self.request.recv(1024).decode())
             self.request.send(b'ready')
 
-            f = open(file_name, 'wb')
+            f = open(file_path, 'wb')
             m = hashlib.md5()
             received_size = 0
             while received_size < file_size:
