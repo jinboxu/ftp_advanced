@@ -79,7 +79,7 @@ class MyHandle( socketserver.BaseRequestHandler ):
 
 
     def ls(self):
-        res = str(os.listdir('.'))
+        res = str(os.listdir(self.cur_path))
         self.request.send( str(len(res)).encode() )
         self.request.recv(1024)
         self.request.send(res.encode())
